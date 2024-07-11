@@ -17,7 +17,6 @@ type game struct {
 	score         int
 	height, width int
 	isOver        bool
-	pointChan     chan int
 	phaseThrough  bool
 }
 
@@ -27,7 +26,6 @@ func NewGame(height, width int) *game {
 		score:     0,
 		height:    height,
 		width:     width,
-		pointChan: make(chan int),
 	}
 	grid[0][0].Set("style", "background:grey;") // fast inplace rendering
 	new_game.placeFood()
@@ -71,9 +69,8 @@ func (g *game) moveSnake() error {
 	}
 	grid[h.x][h.y].Set("style", "background:grey;") // fast inplace rendering
 	if g.hasFood(h) {
-		go func() {
-			g.pointChan <- g.food.points
-		}()
+        g.score += g.food.points
+        g.renderResult()
 		g.snake.len += 1
 		g.placeFood()
 	}
@@ -89,9 +86,6 @@ func (g *game) Start() {
 	g.setMode()
 	for {
 		select {
-		case p := <-g.pointChan:
-			g.score += p
-			g.renderResult()
 		case d := <-moveChan:
 			g.snake.changeDirection(d)
 		case s := <-restartChan:

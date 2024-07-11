@@ -8,13 +8,31 @@ type food struct {
 	pos    coord
 }
 
-var foods = []rune{'🍪', '🍑', '🍗', '🍏'}
+var foods = []rune{'🍒', '🍌', '🍇', '🍑'}
+var points = []int{1, 2, 3, 10}
+var prob = []int{30, 25, 20, 4}
+
+func getRandIdxWithProbability() int {
+	sm := 0
+	for i := range prob {
+		sm += prob[i]
+	}
+	rnd := rand.Intn(sm) + 1
+	sm = 0
+	for i := range prob {
+		sm += prob[i]
+		if sm >= rnd {
+			return i
+		}
+	}
+	return -1
+}
 
 func newFood(c coord) food {
-	points := rand.Intn(len(foods)) + 1 // random points
+	idx := getRandIdxWithProbability()
 	return food{
-		emoji:  foods[points-1],
-		points: points,
+		emoji:  foods[idx],
+		points: points[idx],
 		pos:    c,
 	}
 }
