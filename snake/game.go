@@ -86,7 +86,6 @@ func (g *game) moveInterval() time.Duration {
 }
 
 func (g *game) Start() {
-	var _ js.Value
 	g.setMode()
 	for {
 		select {
