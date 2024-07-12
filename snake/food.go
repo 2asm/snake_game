@@ -8,9 +8,9 @@ type food struct {
 	pos    coord
 }
 
-var foods = []rune{'🍒', '🍌', '🍇', '🍑'}
-var points = []int{1, 2, 3, 10}
-var prob = []int{30, 25, 20, 4}
+var foods = []rune{'🍒', '🍌', '🍇', '🍑', '🍍'}
+var points = []int{1, 2, 3, 10, 100}
+var prob = []int{500, 300, 189, 10, 1} // total 1000
 
 func getRandIdxWithProbability() int {
 	sm := 0

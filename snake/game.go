@@ -22,10 +22,10 @@ type game struct {
 
 func NewGame(height, width int) *game {
 	new_game := &game{
-		snake:     initialSnake(),
-		score:     0,
-		height:    height,
-		width:     width,
+		snake:  initialSnake(),
+		score:  0,
+		height: height,
+		width:  width,
 	}
 	grid[0][0].Set("style", "background:grey;") // fast inplace rendering
 	new_game.placeFood()
@@ -69,8 +69,8 @@ func (g *game) moveSnake() error {
 	}
 	grid[h.x][h.y].Set("style", "background:grey;") // fast inplace rendering
 	if g.hasFood(h) {
-        g.score += g.food.points
-        g.renderResult()
+		g.score += g.food.points
+		g.renderResult()
 		g.snake.len += 1
 		g.placeFood()
 	}
@@ -78,7 +78,7 @@ func (g *game) moveSnake() error {
 }
 
 func (g *game) moveInterval() time.Duration {
-	ms := 100 - min(50, g.score/10) // milliseconds
+	ms := max(50, 100-g.snake.len/10) // milliseconds
 	return time.Duration(time.Millisecond * time.Duration(ms))
 }
 
