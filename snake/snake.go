@@ -8,13 +8,15 @@ type snake struct {
 	body      []coord
 	direction direction
 	len       int
+	color     string
 }
 
-func newSnake(body []coord, direction direction) *snake {
+func newSnake(body []coord, direction direction, color string) *snake {
 	return &snake{
 		body:      body,
 		direction: direction,
 		len:       len(body),
+		color:     color,
 	}
 }
 
@@ -22,6 +24,7 @@ func initialSnake() *snake {
 	return &snake{
 		body:      []coord{{0, 0}},
 		direction: _RIGHT,
+		color:     "grey",
 		len:       1,
 	}
 }
@@ -50,7 +53,7 @@ func (s *snake) changeDirection(d direction) {
 	}
 }
 
-func (s *snake) move() error {
+func (s *snake) move() (error, *coord) {
 	h := s.head()
 	switch s.direction {
 	case _LEFT:
@@ -63,14 +66,15 @@ func (s *snake) move() error {
 		h.x++
 	}
 	if s.onBody(h) {
-		return fmt.Errorf("died")
+		return fmt.Errorf("died"), nil
 	}
+	var retCell *coord = nil
 	if s.len > len(s.body) {
 		s.body = append(s.body, h)
 	} else {
 		tmp := s.body[0]
-		grid[tmp.x][tmp.y].Set("style", "background:#ddd;") // fast inplace rendering
+		retCell = &tmp
 		s.body = append(s.body[1:], h)
 	}
-	return nil
+	return nil, retCell
 }

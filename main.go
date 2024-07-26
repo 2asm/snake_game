@@ -5,5 +5,5 @@ package main
 import "github.com/2asm/snake_game/snake"
 
 func main() {
-	snake.NewGame(15, 20).Start()
+	snake.NewGame(20, 30, 25).Start()
 }

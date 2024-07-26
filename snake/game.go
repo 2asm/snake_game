@@ -5,8 +5,6 @@ package snake
 import (
 	"fmt"
 	"math/rand"
-	"strconv"
-	"strings"
 	"syscall/js"
 	"time"
 )
@@ -16,18 +14,21 @@ type game struct {
 	food          food
 	score         int
 	height, width int
+	scale         int // pixel size
 	isOver        bool
 	phaseThrough  bool
 }
 
-func NewGame(height, width int) *game {
+func NewGame(height, width, scale int) *game {
 	new_game := &game{
 		snake:  initialSnake(),
 		score:  0,
 		height: height,
 		width:  width,
+		scale:  scale,
 	}
-	grid[0][0].Set("style", "background:grey;") // fast inplace rendering
+	new_game.init()
+	new_game.fillCell(0, 0) // fast inplace rendering
 	new_game.placeFood()
 	return new_game
 }
@@ -49,14 +50,17 @@ func (g *game) placeFood() {
 			break
 		}
 	}
-	grid[g.food.pos.x][g.food.pos.y].Set("innerText", "") // fast inplace rendering
 	g.food = newFood(c)
-	grid[g.food.pos.x][g.food.pos.y].Set("innerText", string(g.food.emoji)) // fast inplace rendering
+	g.fillTextCell(c.x, c.y, g.food.emoji) // fast inplace rendering
 }
 
 func (g *game) moveSnake() error {
-	if err := g.snake.move(); err != nil {
+	err, c := g.snake.move()
+	if err != nil {
 		return err
+	}
+	if c != nil {
+		g.clearCell(c.x, c.y)
 	}
 	h := g.snake.head()
 	if g.outOfArena(h) {
@@ -67,7 +71,7 @@ func (g *game) moveSnake() error {
 		h.y = (h.y + g.width) % g.width
 		g.snake.UpdateHead(h)
 	}
-	grid[h.x][h.y].Set("style", "background:grey;") // fast inplace rendering
+	g.fillCell(h.x, h.y) // fast inplace rendering
 	if g.hasFood(h) {
 		g.score += g.food.points
 		g.renderResult()
@@ -88,14 +92,15 @@ func (g *game) Start() {
 		select {
 		case d := <-moveChan:
 			g.snake.changeDirection(d)
-		case s := <-restartChan:
-			g.cleanUp()
-			g = NewGame(g.height, g.width)
-			if s == "p" || s == "P" {
+		case keyCode := <-restartChan:
+			g.cleanUpSnake()
+            g.clearCell(g.food.pos.x, g.food.pos.y)
+			// g.clearAll()
+			g = NewGame(g.height, g.width, g.scale)
+			if keyCode == 80 { // p
 				g.phaseThrough = true
 			}
 			g.setMode()
-			g.placeFood()
 			g.renderResult()
 		default:
 			if !g.isOver {
@@ -109,45 +114,24 @@ func (g *game) Start() {
 }
 
 var (
-	result       js.Value
-	r, p         js.Value
-	grid         = make([][]js.Value, 0)
-	moveChan     = make(chan direction)
-	restartChan  = make(chan string)
-	idToCoordMap = map[string]coord{}
+	_INIT       bool
+	result      js.Value
+	r, p        js.Value
+	gameCanvas  js.Value
+	moveChan    = make(chan direction)
+	restartChan = make(chan int)
 )
 
-func coordToId(c coord) string {
-	return fmt.Sprintf("%v-%v", c.x, c.y)
-}
-
-func idToCoord(id string) coord {
-	if c, ok := idToCoordMap[id]; ok {
-		return c
+func (g *game) init() {
+	if _INIT {
+		return
 	}
-	parts := strings.Split(id, "-")
-	x, err := strconv.Atoi(parts[0])
-	if err != nil {
-		panic("atoi")
-	}
-	y, err := strconv.Atoi(parts[0])
-	if err != nil {
-		panic("atoi")
-	}
-	out := coord{x, y}
-	idToCoordMap[id] = out
-	return out
-}
-
-func init() {
-	for i := range 15 { // fix
-		gi := []js.Value{}
-		for j := range 20 {
-			e := js.Global().Get("document").Call("getElementById", coordToId(coord{i, j}))
-			gi = append(gi, e)
-		}
-		grid = append(grid, gi)
-	}
+	_INIT = true
+	// todo: change scale accoding to resolution
+	c := js.Global().Get("document").Call("getElementById", "gameCanvas")
+	c.Set("height", g.scale*g.height)
+	c.Set("width", g.scale*g.width)
+	gameCanvas = c.Call("getContext", "2d")
 
 	result = js.Global().Get("document").Call("getElementById", "result")
 	r = js.Global().Get("document").Call("getElementById", "r")
@@ -155,18 +139,12 @@ func init() {
 
 	js.Global().Get("document").
 		Call("addEventListener", "keydown", js.FuncOf(func(this js.Value, args []js.Value) interface{} {
-			key := args[0].Get("key").String()
-			switch key {
-			case "ArrowUp":
-				moveChan <- _UP
-			case "ArrowDown":
-				moveChan <- _DOWN
-			case "ArrowLeft":
-				moveChan <- _LEFT
-			case "ArrowRight":
-				moveChan <- _RIGHT
-			case "r", "R", "p", "P":
-				restartChan <- key
+			keyCode := args[0].Get("keyCode").Int()
+			switch keyCode {
+			case 37, 38, 39, 40:
+				moveChan <- direction(keyCode - 37 + 1)
+			case 82, 80: // r, p
+				restartChan <- keyCode
 			}
 			return nil
 		}))
@@ -186,11 +164,38 @@ func (g *game) renderResult() {
 	result.Set("innerText", fmt.Sprintf("Score: %v", g.score))
 }
 
-func (g *game) cleanUp() {
+func (g *game) cleanUpSnake() {
 	for _, c := range g.snake.body {
 		if !g.outOfArena(c) {
-			grid[c.x][c.y].Set("style", "background:#ddd;")
+			g.clearCell(c.x, c.y)
 		}
 	}
-	grid[g.food.pos.x][g.food.pos.y].Set("innerText", "")
+}
+
+func (g *game) clearAll() {
+	for x := range g.height {
+		for y := range g.width {
+			gameCanvas.Call("clearRect", y*g.scale, x*g.scale, g.scale, g.scale)
+		}
+	}
+}
+
+func (g *game) fillCell(x, y int) {
+	gameCanvas.Set("fillStyle", g.snake.color)
+	gameCanvas.Call("fillRect", y*g.scale, x*g.scale, g.scale, g.scale)
+	gameCanvas.Call("fill")
+}
+
+func (g *game) fillTextCell(x, y int, ch rune) {
+	// gameCanvas.Set("fillStyle", "green")
+	gameCanvas.Set("font", fmt.Sprintf("%vpx arial", g.scale*9/10))
+	gameCanvas.Set("textAlign", "left")
+	gameCanvas.Set("textBaseline", "top")
+	gameCanvas.Call("fillText", string(ch), y*g.scale, x*g.scale+g.scale/10)
+	gameCanvas.Call("fill")
+}
+
+func (g *game) clearCell(x, y int) {
+	gameCanvas.Call("clearRect", y*g.scale, x*g.scale, g.scale, g.scale)
+	gameCanvas.Call("fill")
 }
