@@ -94,7 +94,7 @@ func (g *game) Start() {
 			g.snake.changeDirection(d)
 		case keyCode := <-restartChan:
 			g.cleanUpSnake()
-            g.clearCell(g.food.pos.x, g.food.pos.y)
+			g.clearCell(g.food.pos.x, g.food.pos.y)
 			// g.clearAll()
 			g = NewGame(g.height, g.width, g.scale)
 			if keyCode == 80 { // p
@@ -188,10 +188,10 @@ func (g *game) fillCell(x, y int) {
 
 func (g *game) fillTextCell(x, y int, ch rune) {
 	// gameCanvas.Set("fillStyle", "green")
-	gameCanvas.Set("font", fmt.Sprintf("%vpx arial", g.scale*9/10))
+	gameCanvas.Set("font", fmt.Sprintf("%vpx arial", g.scale*3/4))
 	gameCanvas.Set("textAlign", "left")
 	gameCanvas.Set("textBaseline", "top")
-	gameCanvas.Call("fillText", string(ch), y*g.scale, x*g.scale+g.scale/10)
+	gameCanvas.Call("fillText", string(ch), y*g.scale, x*g.scale+g.scale/5)
 	gameCanvas.Call("fill")
 }
 
