@@ -23,3 +23,17 @@ func (d direction) opposite() direction {
 		return 0
 	}
 }
+
+func (d direction) String() string {
+	switch d {
+	case _LEFT:
+		return "←"
+	case _RIGHT:
+		return "→"
+	case _UP:
+		return "↑"
+	case _DOWN:
+		return "↓"
+	}
+	return "•"
+}

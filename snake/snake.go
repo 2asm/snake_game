@@ -22,15 +22,19 @@ func newSnake(body []coord, direction direction, color string) *snake {
 
 func initialSnake() *snake {
 	return &snake{
-		body:      []coord{{0, 0}},
+		body:      []coord{{0, 0}, {0, 1}},
 		direction: _RIGHT,
 		color:     "grey",
-		len:       1,
+		len:       2,
 	}
 }
 
 func (s *snake) head() coord {
 	return s.body[len(s.body)-1]
+}
+
+func (s *snake) neck() coord {
+	return s.body[len(s.body)-2]
 }
 
 func (s *snake) UpdateHead(newHead coord) {
@@ -53,7 +57,7 @@ func (s *snake) changeDirection(d direction) {
 	}
 }
 
-func (s *snake) move() (error, *coord) {
+func (s *snake) move() (err error, retCell *coord) {
 	h := s.head()
 	switch s.direction {
 	case _LEFT:
@@ -66,9 +70,8 @@ func (s *snake) move() (error, *coord) {
 		h.x++
 	}
 	if s.onBody(h) {
-		return fmt.Errorf("died"), nil
+		err = fmt.Errorf("died")
 	}
-	var retCell *coord = nil
 	if s.len > len(s.body) {
 		s.body = append(s.body, h)
 	} else {
@@ -76,5 +79,5 @@ func (s *snake) move() (error, *coord) {
 		retCell = &tmp
 		s.body = append(s.body[1:], h)
 	}
-	return nil, retCell
+	return
 }

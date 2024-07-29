@@ -16,6 +16,10 @@
         <canvas id="gameCanvas" width="0" height="0" style="border:1px solid grey;"></canvas>
         <div>Press <span id="r">r</span>/<span id="p">p</span> to restart</div>
     </div>
+    <img id="arrow-left" src="./arrows/snake-arrow-left.png" hidden>
+    <img id="arrow-up" src="./arrows/snake-arrow-up.png" hidden>
+    <img id="arrow-right" src="./arrows/snake-arrow-right.png" hidden>
+    <img id="arrow-down" src="./arrows/snake-arrow-down.png" hidden>
     <script>
         const go = new Go();
         WebAssembly.instantiateStreaming(fetch("game.wasm"), go.importObject).then((result) => {go.run(result.instance);});
